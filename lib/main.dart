@@ -1,55 +1,69 @@
-import 'dart:io';
-
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hive/hive.dart';
-import 'package:mash/screens/auth/controller/auth_controller.dart';
-import 'package:mash/screens/auth/sign_in%20_screen.dart';
-import 'package:mash/screens/home/home_screen.dart';
+import 'package:mash_flutter/controllers/auth_controller.dart';
+import 'package:mash_flutter/services/api_client.dart';
+import 'package:mash_flutter/views/screens/auth/introduce_your_self.dart';
 
-import 'noti/notification_handler_service.dart';
-
-late AuthController authController;
+import 'constants/app_colors.dart';
+import 'views/screens/auth/sign_in_screen.dart';
+import 'views/screens/tab_bar_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp();
-  await GetStorage.init();
-  authController = Get.put(AuthController());
-  notificationHandlerService();
-  runApp(MyApp());
+
+  // Firebase notification
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true,
+  );
+
+  debugPrint('User granted permission: ${settings.authorizationStatus}');
+
+  FirebaseMessaging.onMessage.listen((event) {});
+
+  FirebaseMessaging.onMessageOpenedApp.listen((event) {});
+
+  // Inject service
+  Get.lazyPut(() => ApiClient());
+
+  // Inject controller
+  Get.put(AuthController());
+
+  runApp(const MashApp());
 }
 
-GetStorage getStorage = GetStorage();
-bool testing = false;
+class MashApp extends StatelessWidget {
+  const MashApp({Key? key}) : super(key: key);
 
-class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: Size(375, 812),
-      builder: () {
-        return GetMaterialApp(
-          defaultTransition: Transition.noTransition,
-          debugShowCheckedModeBanner: false,
-          title: 'MyMash',
-          theme: ThemeData(
-            textTheme: GoogleFonts.sourceSansProTextTheme(),
-            primarySwatch: Colors.blue,
-          ),
-          home: authController.logged.value ? HomeScreen() : SignIn(),
-          // home: LocationEnable(),
-        );
-      },
+    return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        appBarTheme: const AppBarTheme(
+          elevation: 0,
+          backgroundColor: AppColor.orange,
+        ),
+        textTheme: GoogleFonts.sourceSansProTextTheme(),
+      ),
+      home: Obx(
+        () => AuthController.instance.isUserLogIn.value
+            ? const TabBarScreen()
+            : const SignInScreen(),
+      ),
     );
   }
 }
-
-// TODO: 7 Feb 2022
-// 1. Add back button in Friends & Friend Requests
-// 2. Dispaly start like yelp in Home screen when type was Yelp
-// 3. Check map screen, when click on profile that time need to show message section

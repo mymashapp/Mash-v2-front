@@ -1,3 +1,0 @@
-getLatLng() {
-  // var http.
-}
