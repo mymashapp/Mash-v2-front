@@ -10,6 +10,7 @@ class Api {
   static const String GET_ALL_INTERESTS = 'Interest/GetAllInterests/';
 
   static const String GET_CARDS = 'Card/GetCards';
+  static const String CREATE_CARD = 'Card/Create';
 
   static const String GET_CATEGORY = 'Category/GetAllCategory';
 }

@@ -96,7 +96,7 @@ class UserScreen extends StatelessWidget {
                 children: [
                   GridView.builder(
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: 1,
+                    itemCount: 4,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,

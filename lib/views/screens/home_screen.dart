@@ -22,7 +22,7 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         leading: IconButton(
           onPressed: () {
-            Get.to(() => const CreateEventScreen());
+            Get.to(() => CreateEventScreen());
           },
           icon: Container(
             height: 50,

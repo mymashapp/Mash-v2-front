@@ -101,7 +101,6 @@ class AuthController extends GetxController {
   void onInit() {
     super.onInit();
 
-    getAllInterests();
     if (auth.currentUser != null) getUser(auth.currentUser!.uid);
   }
 
@@ -109,6 +108,7 @@ class AuthController extends GetxController {
   void onReady() {
     super.onReady();
 
+    getAllInterests();
     firebaseUser = Rx<User?>(auth.currentUser);
     firebaseUser.bindStream(auth.userChanges());
 
@@ -346,16 +346,17 @@ class AuthController extends GetxController {
       if (user!.pictures != null && user!.pictures!.isNotEmpty) {
         final profileIndex =
             _user.pictures!.indexWhere((element) => element.pictureType == 1);
-        if (profileIndex > 0) {
-          profileImageUrl.value = 'http://3.23.228.121/' +
+        debugPrint('$profileIndex');
+        if (profileIndex != -1) {
+          profileImageUrl.value = 'https://backend.mymashapp.com/' +
               _user.pictures![profileIndex].pictureUrl!;
         }
 
         final coverIndex =
             _user.pictures!.indexWhere((element) => element.pictureType == 2);
-        if (coverIndex > 0) {
-          coverImageUrl.value =
-              'http://3.23.228.121/' + _user.pictures![coverIndex].pictureUrl!;
+        if (coverIndex != -1) {
+          coverImageUrl.value = 'https://backend.mymashapp.com/' +
+              _user.pictures![coverIndex].pictureUrl!;
         }
       }
 
@@ -410,7 +411,7 @@ class AuthController extends GetxController {
     _userInput.isVaccinated = isCovidVaccinated.value;
 
     _userInput.selectedInterestIds =
-        interests.where((e) => e.isSelected).map((p) => p.id!).toList();
+        interests.where((e) => e.isSelected).map((p) => p.id!).toSet().toList();
 
     if (fromBackground) {
       _userInput.email = emailController.value.text;
@@ -434,6 +435,8 @@ class AuthController extends GetxController {
               : 3;
     }
 
+    _userInput.uploadedPictures = [];
+
     if (profileImage.value != null) {
       // convert profile image to base64
       final bytes = await profileImage.value!.readAsBytes();
@@ -441,9 +444,8 @@ class AuthController extends GetxController {
 
       String base64Image = 'data:image/png;base64,' + base64String;
 
-      _userInput.uploadedPictures = [
-        app.Picture(pictureType: 1, pictureUrl: base64Image, userId: user!.id)
-      ];
+      _userInput.uploadedPictures!.add(app.Picture(
+          pictureType: 1, pictureUrl: base64Image, userId: user!.id));
     }
 
     if (coverImage.value != null) {
@@ -453,9 +455,8 @@ class AuthController extends GetxController {
 
       String base64Image = 'data:image/png;base64,' + base64String;
 
-      _userInput.uploadedPictures = [
-        app.Picture(pictureType: 2, pictureUrl: base64Image, userId: user!.id)
-      ];
+      _userInput.uploadedPictures!.add(app.Picture(
+          pictureType: 2, pictureUrl: base64Image, userId: user!.id));
     }
 
     if (mediaImage.value != null) {
@@ -465,9 +466,8 @@ class AuthController extends GetxController {
 
       String base64Image = 'data:image/png;base64,' + base64String;
 
-      _userInput.uploadedPictures = [
-        app.Picture(pictureType: 3, pictureUrl: base64Image, userId: user!.id)
-      ];
+      _userInput.uploadedPictures!.add(app.Picture(
+          pictureType: 3, pictureUrl: base64Image, userId: user!.id));
     }
 
     _userInput.interests = [];

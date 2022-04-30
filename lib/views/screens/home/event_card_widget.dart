@@ -36,7 +36,7 @@ class EventCardWidget extends StatelessWidget {
       child: Stack(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(15),
             child: CachedNetworkImage(
               width: Get.width,
               height: Get.height,
@@ -58,7 +58,7 @@ class EventCardWidget extends StatelessWidget {
               children: [
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColor.orange,
                     borderRadius:

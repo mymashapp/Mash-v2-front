@@ -23,7 +23,7 @@ class ApiClient extends GetxService {
       headers: {'accept': '*/*', 'Content-Type': 'application/json'},
     );
 
-    developer.log('Response => ${jsonDecode(response.body)}');
+    developer.log('Response => ${(response.body)}');
 
     return response.body;
   }
