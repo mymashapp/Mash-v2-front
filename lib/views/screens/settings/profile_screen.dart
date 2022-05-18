@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:mash_flutter/constants/app_colors.dart';
@@ -116,7 +117,38 @@ class ProfileScreen extends StatelessWidget {
                   },
                 ),
                 const SizedBox(height: 20),
-                TextFormField(
+                PlacesAutocompleteField(
+                  apiKey: 'AIzaSyArgtGCvxqhaW-EdFHnSeI4vTANeGvRFTg',
+                  controller: _controller.locationController.value,
+                  hint: '',
+                  inputDecoration: InputDecoration(
+                    hintText: 'Location',
+                    hintStyle: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                    ),
+                    border: border,
+                    enabledBorder: border,
+                    focusedBorder: border,
+                    errorBorder: errorBorder,
+                    focusedErrorBorder: errorBorder,
+                  ),
+                  /*onSelected: (p) async {
+                    GoogleMapsPlaces _places = GoogleMapsPlaces(
+                      apiKey: 'AIzaSyArgtGCvxqhaW-EdFHnSeI4vTANeGvRFTg',
+                      apiHeaders: await const GoogleApiHeaders().getHeaders(),
+                    );
+                    PlacesDetailsResponse detail =
+                        await _places.getDetailsByPlaceId(p.placeId!);
+                    final lat = detail.result.geometry!.location.lat;
+                    final lng = detail.result.geometry!.location.lng;
+                    final postalCode = detail.result.addressComponents
+                        .firstWhere(
+                            (element) => element.types.contains('postal_code'))
+                        .longName;
+                  },*/
+                ),
+                /*TextFormField(
                   controller: _controller.locationController.value,
                   textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
@@ -139,7 +171,7 @@ class ProfileScreen extends StatelessWidget {
                     return null;
                   },
                   onFieldSubmitted: _controller.autoCompleteSearch,
-                ),
+                ),*/
                 const SizedBox(height: 20),
                 InkWell(
                   onTap: () {
@@ -306,6 +338,12 @@ class ProfileScreen extends StatelessWidget {
                     if (_formKey.currentState!.validate()) {
                       _formKey.currentState!.save();
                       FocusScope.of(context).unfocus();
+
+                      if (_controller.locationController.value.text.isEmpty) {
+                        showErrorSnackBar(
+                            'Address required', 'Please select address');
+                        return;
+                      }
 
                       final interests = _controller.interests
                           .where((e) => e.isSelected)

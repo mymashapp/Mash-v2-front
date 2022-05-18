@@ -3,10 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
-import 'package:google_place/google_place.dart';
-import 'package:mash_flutter/controllers/auth_controller.dart';
-import 'package:mash_flutter/models/address_result.dart';
 import 'package:mash_flutter/models/category.dart';
 import 'package:mash_flutter/services/api.dart';
 import 'package:mash_flutter/services/api_client.dart';
@@ -28,9 +24,9 @@ class EventController extends GetxController {
   final Rx<File?> eventImage = Rx<File?>(null);
   final RxBool loading = false.obs;
 
-  final RxList<AutocompletePrediction> predictions =
-      <AutocompletePrediction>[].obs;
-  AutocompletePrediction? selectedLocation;
+  double? lat;
+  double? lng;
+  String? zipCode;
 
   @override
   void onReady() {
@@ -42,30 +38,27 @@ class EventController extends GetxController {
   void _getAllCategory() async {
     final response = await _client.getData(Api.GET_CATEGORY);
 
-    final _categories = List<Category>.from(
-        jsonDecode(response).map((x) => Category.fromJson(x)));
+    final json = jsonDecode(response);
 
-    categories.assignAll(_categories);
+    if (json['isSucceeded']) {
+      final _categories =
+          List<Category>.from(json['data'].map((x) => Category.fromJson(x)));
+
+      categories.assignAll(_categories);
+    }
   }
 
   void onCategoryChanged(Category? category) {
     selectedCategory.value = category!;
   }
 
-  void autoCompleteSearch(String? location) async {
-    if (location != null && location.trim().isNotEmpty) {
-      GooglePlace googlePlace =
-          GooglePlace('AIzaSyArgtGCvxqhaW-EdFHnSeI4vTANeGvRFTg');
-      predictions.clear();
-      final response = await googlePlace.autocomplete.get(location);
-
-      predictions.assignAll(response!.predictions!);
-    } else {
-      predictions.clear();
-    }
-  }
-
   void createCard() async {
+    if (lat == null || lng == null || zipCode == null) {
+      showErrorSnackBar(
+          'Something wrong!', 'Problem with address, please choose correct');
+      return;
+    }
+
     loading.value = true;
 
     if (selectedTime.value == 0) {
@@ -74,45 +67,19 @@ class EventController extends GetxController {
       eventDate.value = DateTime.now().add(const Duration(days: 1));
     }
 
-    final uri = Uri.parse(
-        'https://maps.googleapis.com/maps/api/geocode/json?address=${selectedLocation!.description!}&key=AIzaSyArgtGCvxqhaW-EdFHnSeI4vTANeGvRFTg');
-
-    final response = await http.get(uri);
-
-    AddressResult addressResult =
-        AddressResult.fromJson(jsonDecode(response.body));
-
-    String zipcode = '94103';
-    double latitude = 0;
-    double longitude = 0;
-
-    if (addressResult.results != null) {
-      for (Result result in addressResult.results!) {
-        for (var component in result.addressComponents!) {
-          if (component.types!.contains('postal_code')) {
-            zipcode = component.longName ?? '94103';
-            latitude = result.geometry!.location?.lat ?? 0;
-            longitude = result.geometry!.location?.lng ?? 0;
-
-            break;
-          }
-        }
-      }
-    }
-
     final bytes = await eventImage.value!.readAsBytes();
     final base64String = base64.encode(bytes);
 
     String base64Image = 'data:image/png;base64,' + base64String;
 
     final body = {
-      "id": AuthController.instance.user?.id ?? 0,
+      // "id": AuthController.instance.user?.id ?? 0,
       "name": nameController.value.text,
       "categoryId": selectedCategory.value.id,
       "address": locationController.value.text,
-      "zip": zipcode,
-      "latitude": latitude,
-      "longitude": longitude,
+      "zipCode": zipCode!,
+      "latitude": lat!,
+      "longitude": lng!,
       "cardType": 2,
       "dateUtc": eventDate.value.toIso8601String(),
       "pictureUrl": base64Image,

@@ -76,6 +76,14 @@ class UserScreen extends StatelessWidget {
           const SizedBox(width: 10),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showImagePickerDialog(3);
+        },
+        elevation: 0.0,
+        backgroundColor: AppColor.orange,
+        child: const Icon(Icons.add),
+      ),
       body: NestedScrollView(
         headerSliverBuilder: _headerSliverBuilder,
         body: Column(
@@ -94,31 +102,57 @@ class UserScreen extends StatelessWidget {
                 controller: _userTabcontroller.tabController,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: 4,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 3.0,
-                      crossAxisSpacing: 3.0,
+                  Obx(
+                    () => GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _controller.mediaImageUrls.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 3.0,
+                        crossAxisSpacing: 3.0,
+                      ),
+                      itemBuilder: (context, index) {
+                        return Stack(
+                          children: [
+                            CachedNetworkImage(
+                              imageUrl: 'https://backend.mymashapp.com/' +
+                                  (_controller
+                                          .mediaImageUrls[index].pictureUrl ??
+                                      ''),
+                              placeholder: (context, url) => const Center(
+                                child: SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) =>
+                                  const Icon(Icons.error),
+                              fit: BoxFit.cover,
+                            ),
+                            Positioned(
+                              right: 4,
+                              top: 4,
+                              child: InkWell(
+                                onTap: () {
+                                  _controller.deleteMedia(_controller
+                                      .mediaImageUrls[index].userId!);
+                                  _controller.mediaImageUrls.removeAt(index);
+                                },
+                                child: Transform.rotate(
+                                  angle: pi / 4,
+                                  child: const Icon(
+                                    Icons.add_circle,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
-                    itemBuilder: (context, index) {
-                      return CachedNetworkImage(
-                        imageUrl:
-                            'https://www.industrialempathy.com/img/remote/ZiClJf-1920w.jpg',
-                        placeholder: (context, url) => const Center(
-                          child: SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) =>
-                            const Icon(Icons.error),
-                        fit: BoxFit.cover,
-                      );
-                    },
                   )
                 ],
               ),
@@ -180,7 +214,7 @@ class UserScreen extends StatelessWidget {
                   Align(
                     alignment: Alignment.bottomRight,
                     child: InkWell(
-                      onTap: () => _showImagePickerDialog(isForCover: true),
+                      onTap: () => _showImagePickerDialog(2),
                       child: Container(
                         padding: const EdgeInsets.all(5),
                         margin: const EdgeInsets.only(right: 10, bottom: 60),
@@ -199,7 +233,7 @@ class UserScreen extends StatelessWidget {
                   Align(
                     alignment: Alignment.bottomLeft,
                     child: InkWell(
-                      onTap: () => _showImagePickerDialog(),
+                      onTap: () => _showImagePickerDialog(1),
                       child: Container(
                         height: 100,
                         width: 100,
@@ -450,7 +484,7 @@ class UserScreen extends StatelessWidget {
     ];
   }
 
-  Future<void> _cropImage(String filePath, {bool isForCover = false}) async {
+  Future<void> _cropImage(String filePath, int type) async {
     final file = await _imageCropper.cropImage(
       sourcePath: filePath,
       aspectRatioPresets: [
@@ -472,20 +506,23 @@ class UserScreen extends StatelessWidget {
       ),
     );
 
-    if (isForCover) {
-      // Assign profile image to controller for updating widget
-      _controller.newCoverImage.value = file;
-      // Upload image
-      _controller.uploadCoverImage();
-    } else {
-      // Assign profile image to controller for updating widget
-      _controller.newProfileImage.value = file;
-      // Upload image
-      _controller.uploadProfileImage();
+    switch (type) {
+      case 1:
+        _controller.newProfileImage.value = file;
+        _controller.uploadProfileImage();
+        break;
+      case 2:
+        _controller.newCoverImage.value = file;
+        _controller.uploadCoverImage();
+        break;
+      case 3:
+        _controller.newmediaImage.value = file;
+        _controller.uploadMediaImage();
+        break;
     }
   }
 
-  _showImagePickerDialog({bool isForCover = false}) {
+  _showImagePickerDialog(int type) {
     Get.dialog(
       Dialog(
         child: Padding(
@@ -500,7 +537,7 @@ class UserScreen extends StatelessWidget {
                       await _imagePicker.pickImage(source: ImageSource.camera);
                   if (xFile != null) {
                     Get.back();
-                    await _cropImage(xFile.path, isForCover: isForCover);
+                    await _cropImage(xFile.path, type);
                   }
                 },
                 child: const SizedBox(
@@ -519,7 +556,7 @@ class UserScreen extends StatelessWidget {
                       await _imagePicker.pickImage(source: ImageSource.gallery);
                   if (xFile != null) {
                     Get.back();
-                    await _cropImage(xFile.path, isForCover: isForCover);
+                    await _cropImage(xFile.path, type);
                   }
                 },
                 child: const SizedBox(

@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mash_flutter/controllers/auth_controller.dart';
+import 'package:mash_flutter/controllers/location_controller.dart';
 import 'package:mash_flutter/services/api_client.dart';
-import 'package:mash_flutter/views/screens/auth/introduce_your_self.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constants/app_colors.dart';
 import 'views/screens/auth/sign_in_screen.dart';
@@ -15,6 +16,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
+  final sharedPreferences = await SharedPreferences.getInstance();
 
   // Firebase notification
   FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -36,10 +38,12 @@ void main() async {
   FirebaseMessaging.onMessageOpenedApp.listen((event) {});
 
   // Inject service
+  Get.lazyPut(() => sharedPreferences);
   Get.lazyPut(() => ApiClient());
 
   // Inject controller
   Get.put(AuthController());
+  Get.put(LocationController());
 
   runApp(const MashApp());
 }

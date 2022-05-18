@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:get/get.dart';
 import 'package:mash_flutter/constants/app_colors.dart';
+import 'package:mash_flutter/controllers/card_controller.dart';
 import 'package:mash_flutter/models/card_model.dart';
+import 'package:mash_flutter/utils/distance_calculation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EventCardWidget extends StatelessWidget {
   const EventCardWidget({
@@ -144,8 +147,7 @@ class EventCardWidget extends StatelessWidget {
                               onRatingUpdate: (rating) {},
                             ),
                       const Spacer(),
-                      cardModel.cardType == CardType.yelp ||
-                              cardModel.cardType == CardType.own
+                      cardModel.cardType == CardType.yelp
                           ? SizedBox(
                               width: 100,
                               child: Image.asset(
@@ -174,10 +176,84 @@ class EventCardWidget extends StatelessWidget {
                                   width: 100,
                                   fit: BoxFit.contain,
                                 ),
-                      const Icon(
-                        Icons.error,
-                        size: 40,
-                        color: AppColor.orange,
+                      InkWell(
+                        onTap: () {
+                          final position =
+                              Get.find<CardController>().currentPosition;
+
+                          Get.dialog(Dialog(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            insetPadding: const EdgeInsets.all(16),
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(height: 5.0),
+                                  Text(cardModel.id.toString()),
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            cardModel.address ?? '',
+                                            maxLines: 2,
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              color: AppColor.orange,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (cardModel.phoneNo != null)
+                                          IconButton(
+                                            onPressed: () {
+                                              launch(
+                                                  "tel:${cardModel.phoneNo!}");
+                                            },
+                                            icon: const Icon(Icons.call),
+                                            color: AppColor.orange,
+                                          ),
+                                        IconButton(
+                                          onPressed: () {
+                                            launch(cardModel.url ?? '');
+                                          },
+                                          icon: const Icon(Icons.link),
+                                          color: AppColor.orange,
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  _infoTiles(
+                                    title: "# of swipes today",
+                                    value: cardModel.swipeCount!.toString(),
+                                    iconData: Icons.groups_outlined,
+                                  ),
+                                  _infoTiles(
+                                    title: "Distance",
+                                    value: distanceBetweenPoint(
+                                      position.latitude,
+                                      position.longitude,
+                                      cardModel.latitude ?? 0,
+                                      cardModel.longitude ?? 0,
+                                    ),
+                                    iconData: Icons.directions_outlined,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ));
+                        },
+                        child: const Icon(
+                          Icons.error,
+                          size: 40,
+                          color: AppColor.orange,
+                        ),
                       ),
                     ],
                   ),
@@ -185,6 +261,47 @@ class EventCardWidget extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoTiles(
+      {required String title, String value = "", required IconData iconData}) {
+    return Container(
+      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        boxShadow: const [
+          BoxShadow(
+            color: AppColor.orange,
+            offset: Offset(2, 2),
+            blurRadius: 10,
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            iconData,
+            color: AppColor.orange,
+          ),
+          const SizedBox(width: 10),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColor.orange,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          )
         ],
       ),
     );

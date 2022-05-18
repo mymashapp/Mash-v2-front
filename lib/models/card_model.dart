@@ -16,6 +16,7 @@ class CardModel {
     this.pictures,
     this.dateUtc,
     this.cardType,
+    this.swipeCount,
     this.id,
   });
 
@@ -35,6 +36,7 @@ class CardModel {
   List<String>? pictures;
   DateTime? dateUtc;
   CardType? cardType;
+  int? swipeCount;
   int? id;
 
   factory CardModel.fromJson(Map<String, dynamic> json) => CardModel(
@@ -43,7 +45,7 @@ class CardModel {
         pictureUrl: json["pictureUrl"],
         url: json["url"],
         reviewCount: json["reviewCount"],
-        rating: json["rating"].toDouble(),
+        rating: json["rating"] != null ? json["rating"].toDouble() : 0,
         phoneNo: json["phoneNo"],
         address: json["address"],
         zipCode: json["zipCode"],
@@ -54,6 +56,7 @@ class CardModel {
         pictures: List<String>.from(json["pictures"].map((x) => x)),
         dateUtc: DateTime.parse(json["dateUtc"]),
         cardType: (json["cardType"] as int).cardType,
+        swipeCount: json["swipeCount"] ?? 0,
         id: json["id"],
       );
 
@@ -115,4 +118,9 @@ extension CardTypeValueExtension on int {
         return CardType.own;
     }
   }
+}
+
+enum SwipeType {
+  left, //  0,
+  right // 1
 }

@@ -6,6 +6,8 @@ class Api {
   static const String GET_USER_BY_UID = 'User/GetUserByUid/';
   static const String USER_UPDATE = 'User/Update/';
   static const String USER_UPDATE_PICTURE = 'User/UpdatePictures';
+  static const String ADD_MEDIA = 'User/AddMediaPictures';
+  static const String DELETE_MEDIA = 'User/DeletePictures';
 
   static const String GET_ALL_INTERESTS = 'Interest/GetAllInterests/';
 
@@ -13,6 +15,13 @@ class Api {
   static const String CREATE_CARD = 'Card/Create';
 
   static const String GET_CATEGORY = 'Category/GetAllCategory';
+
+  static const String SWIPE = 'SwipeHistory/Create';
+//   {
+//   "cardId": 5571,
+//   "userId": 61,
+//   "swipeType": 0
+// }
 }
 
 /*public enum PictureType

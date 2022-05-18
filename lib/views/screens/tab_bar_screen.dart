@@ -1,8 +1,12 @@
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
+import 'package:mash_flutter/controllers/card_controller.dart';
 
+import 'chat_user_list_screen.dart';
 import 'home_screen.dart';
+import 'map_screen.dart';
 import 'user_screen.dart';
 
 class TabBarScreen extends StatefulWidget {
@@ -32,6 +36,7 @@ class _TabBarScreenState extends State<TabBarScreen> {
   ];
 
   void _onTap(int index) {
+    if (index == 0) Get.find<CardController>().getCards();
     setState(() {
       _currentIndex = index;
       _controller.jumpToPage(index);
@@ -67,12 +72,8 @@ class _TabBarScreenState extends State<TabBarScreen> {
         controller: _controller,
         children: [
           const HomeScreen(),
-          const Center(
-            child: Text('Home'),
-          ),
-          const Center(
-            child: Text('Map'),
-          ),
+          const ChatUserListScreen(),
+          const MapScreen(),
           UserScreen(),
         ],
       ),

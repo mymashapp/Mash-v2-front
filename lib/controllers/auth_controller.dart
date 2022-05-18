@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get/get.dart';
 import 'package:google_place/google_place.dart';
+import 'package:mash_flutter/models/interest.dart';
 import 'package:mash_flutter/models/user.dart' as app;
 import 'package:mash_flutter/services/api.dart';
 import 'package:mash_flutter/services/api_client.dart';
@@ -15,9 +16,9 @@ import 'package:mash_flutter/utils/error.dart';
 import 'package:mash_flutter/views/screens/auth/introduce_your_self.dart';
 import 'package:mash_flutter/views/screens/auth/sign_in_screen.dart';
 import 'package:mash_flutter/views/screens/tab_bar_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
-import '../models/interest.dart';
 import '../views/screens/auth/verify_screen.dart';
 
 class AuthController extends GetxController {
@@ -36,6 +37,7 @@ class AuthController extends GetxController {
   final Rx<File?> profileImage = Rx<File?>(null);
   final Rx<File?> coverImage = Rx<File?>(null);
   final Rx<File?> mediaImage = Rx<File?>(null);
+  final RxList<File> mediaImages = <File>[].obs;
   final Rx<TextEditingController> nameController = TextEditingController().obs;
   final Rx<TextEditingController> emailController = TextEditingController().obs;
   final Rx<TextEditingController> bioController = TextEditingController().obs;
@@ -91,6 +93,8 @@ class AuthController extends GetxController {
   final RxBool newCoverUploading = false.obs;
   final RxString profileImageUrl = ''.obs;
   final RxString coverImageUrl = ''.obs;
+  final Rx<File?> newmediaImage = Rx<File?>(null);
+  final RxList<app.Picture> mediaImageUrls = <app.Picture>[].obs;
 
   final RxString userName = ''.obs;
   final RxString bioDetails = ''.obs;
@@ -101,7 +105,7 @@ class AuthController extends GetxController {
   void onInit() {
     super.onInit();
 
-    if (auth.currentUser != null) getUser(auth.currentUser!.uid);
+    if (auth.currentUser != null) fetchUserDetails(auth.currentUser!.uid);
   }
 
   @override
@@ -206,7 +210,7 @@ class AuthController extends GetxController {
       loading.value = false;
 
       final uid = userCredential.user?.uid;
-      getUser(uid!, isForRoute: true);
+      fetchUserDetails(uid!, isForRoute: true);
     } catch (e) {
       loading.value = false;
       debugPrint(e.toString());
@@ -238,7 +242,7 @@ class AuthController extends GetxController {
       isReadOnlyEmail.value =
           userCredential.additionalUserInfo!.profile!['email'].length > 0;
 
-      getUser(userCredential.user!.uid, isForRoute: true);
+      fetchUserDetails(userCredential.user!.uid, isForRoute: true);
     } on FirebaseAuthException catch (e) {
       if (e.code == 'account-exists-with-different-credential') {
         showErrorSnackBar(
@@ -304,12 +308,12 @@ class AuthController extends GetxController {
     nameController.value.text = userCredential.user!.displayName ?? '';
     isReadOnlyEmail.value = true;
 
-    getUser(userCredential.user!.uid, isForRoute: true);
+    fetchUserDetails(userCredential.user!.uid, isForRoute: true);
   }
 
   /// Get user by UID
   /// Check if user already in system or not
-  void getUser(String uid, {bool isForRoute = false}) async {
+  void fetchUserDetails(String uid, {bool isForRoute = false}) async {
     loading.value = true;
 
     final response = await _client.getData(Api.GET_USER_BY_UID + '?uid=$uid');
@@ -323,6 +327,9 @@ class AuthController extends GetxController {
       user = _user;
 
       debugPrint('${_user.uid}');
+
+      // Store user id
+      Get.find<SharedPreferences>().setInt('USER_ID', _user.id!);
 
       // Fill controller and value to display in user screen
       nameController.value.text = _user.name!;
@@ -346,7 +353,7 @@ class AuthController extends GetxController {
       if (user!.pictures != null && user!.pictures!.isNotEmpty) {
         final profileIndex =
             _user.pictures!.indexWhere((element) => element.pictureType == 1);
-        debugPrint('$profileIndex');
+
         if (profileIndex != -1) {
           profileImageUrl.value = 'https://backend.mymashapp.com/' +
               _user.pictures![profileIndex].pictureUrl!;
@@ -358,6 +365,14 @@ class AuthController extends GetxController {
           coverImageUrl.value = 'https://backend.mymashapp.com/' +
               _user.pictures![coverIndex].pictureUrl!;
         }
+
+        final mediaImages = _user.pictures!
+            .where((element) => element.pictureType == 3)
+            .toList();
+
+        debugPrint('Media Images Lenght ==> ${mediaImages.length}');
+
+        mediaImageUrls.value = mediaImages;
       }
 
       userName.value = user!.name!;
@@ -367,10 +382,21 @@ class AuthController extends GetxController {
           : user!.preferenceGender == 2
               ? 'Woman'
               : 'Both';
-      minAge.value = user!.preferenceAgeFrom!.toDouble();
-      maxAge.value = user!.preferenceAgeTo!.toDouble();
-      university.value = user!.university!;
-      isCovidVaccinated.value = user!.isVaccinated!;
+
+      if (user!.preferenceAgeFrom == 0) {
+        minAge.value = 18.0;
+      } else {
+        minAge.value = user!.preferenceAgeFrom!.toDouble();
+      }
+
+      if (user!.preferenceAgeFrom == 0) {
+        maxAge.value = 65.0;
+      } else {
+        maxAge.value = user!.preferenceAgeTo!.toDouble();
+      }
+
+      university.value = user!.university ?? '';
+      isCovidVaccinated.value = user!.isVaccinated ?? false;
 
       if (isForRoute) {
         if (_user.isNew!) {
@@ -459,7 +485,7 @@ class AuthController extends GetxController {
           pictureType: 2, pictureUrl: base64Image, userId: user!.id));
     }
 
-    if (mediaImage.value != null) {
+    /*if (mediaImage.value != null) {
       // convert profile image to base64
       final bytes = await mediaImage.value!.readAsBytes();
       final base64String = base64.encode(bytes);
@@ -468,14 +494,25 @@ class AuthController extends GetxController {
 
       _userInput.uploadedPictures!.add(app.Picture(
           pictureType: 3, pictureUrl: base64Image, userId: user!.id));
+    }*/
+
+    if (mediaImages.isNotEmpty) {
+      for (File media in mediaImages) {
+        final bytes = await media.readAsBytes();
+        final base64String = base64.encode(bytes);
+
+        String base64Image = 'data:image/png;base64,' + base64String;
+
+        _userInput.uploadedPictures!.add(app.Picture(
+            pictureType: 3, pictureUrl: base64Image, userId: user!.id));
+      }
     }
 
     _userInput.interests = [];
     _userInput.pictures = [];
 
-    final response =
-        await _client.putData(Api.USER_UPDATE, _userInput.toJson());
-    debugPrint(response);
+    await _client.putData(Api.USER_UPDATE, _userInput.toJson());
+    fetchUserDetails(user!.uid!);
 
     loading.value = false;
 
@@ -489,6 +526,7 @@ class AuthController extends GetxController {
   // Sign out
   void signOut() async {
     await auth.signOut();
+    await Get.find<SharedPreferences>().clear();
 
     phoneNumberController.value.clear();
 
@@ -500,6 +538,9 @@ class AuthController extends GetxController {
   }
 
   void onPrefGroupChanged(String? group) {
+    if (group == 'Group of 3') {
+      genderPref.value = 'Both';
+    }
     groupNoPref.value = group!;
   }
 
@@ -539,8 +580,8 @@ class AuthController extends GetxController {
       {"userId": user!.id!, "pictureUrl": base64Image, "pictureType": 1}
     ];
 
-    final response = await _client.putData(Api.USER_UPDATE_PICTURE, json);
-    getUser(user!.uid!);
+    await _client.putData(Api.USER_UPDATE_PICTURE, json);
+    fetchUserDetails(user!.uid!);
 
     newProfileUploading.value = false;
   }
@@ -558,9 +599,29 @@ class AuthController extends GetxController {
       {"userId": user!.id!, "pictureUrl": base64Image, "pictureType": 2}
     ];
 
-    final response = await _client.putData(Api.USER_UPDATE_PICTURE, json);
-    getUser(user!.uid!);
+    await _client.putData(Api.USER_UPDATE_PICTURE, json);
+    fetchUserDetails(user!.uid!);
 
     newCoverUploading.value = false;
+  }
+
+  void uploadMediaImage() async {
+    final bytes = await newmediaImage.value!.readAsBytes();
+    final base64String = base64.encode(bytes);
+
+    String base64Image = 'data:image/png;base64,' + base64String;
+
+    final json = [
+      {"userId": user!.id!, "pictureUrl": base64Image, "pictureType": 3}
+    ];
+
+    await _client.putData(Api.USER_UPDATE_PICTURE, json);
+    fetchUserDetails(user!.uid!);
+  }
+
+  void deleteMedia(int id) async {
+    final json = [id];
+
+    await _client.postData(Api.USER_UPDATE_PICTURE, json);
   }
 }

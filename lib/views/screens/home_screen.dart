@@ -61,7 +61,7 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: Obx(
-        () => controller.cards.isEmpty
+        () => controller.loading.value
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -95,9 +95,36 @@ class HomeScreen extends StatelessWidget {
                     animationDuration: 300,
                     verticalSwipe: false,
                     threshold: 0.3,
-                    child: EventCardWidget(
-                      cardModel: controller.cards[index],
+                    child: GestureDetector(
+                      onTapDown: (details) {
+                        if (controller.cards[index].pictures!.isNotEmpty) {
+                          debugPrint(controller.cards[index].pictures!.length
+                              .toString());
+                          if (details.globalPosition.dx <= Get.width ~/ 2) {
+                            debugPrint('Left');
+                          } else {
+                            debugPrint('Right');
+                          }
+                        }
+                      },
+                      child: EventCardWidget(
+                        cardModel: controller.cards[index],
+                      ),
                     ),
+                    onSwipeLeft: (finalPosition) {
+                      controller.onSwipeLeft(controller.cards[index]);
+                      controller.cards.removeAt(index);
+                      if (controller.cards.isEmpty) {
+                        controller.getCards();
+                      }
+                    },
+                    onSwipeRight: (finalPosition) {
+                      controller.onSwipeRight(controller.cards[index]);
+                      controller.cards.removeAt(index);
+                      if (controller.cards.isEmpty) {
+                        controller.getCards();
+                      }
+                    },
                   ),
                 ),
               ),

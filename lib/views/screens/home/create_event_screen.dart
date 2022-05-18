@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_google_places/flutter_google_places.dart';
+import 'package:google_api_headers/google_api_headers.dart';
+import 'package:google_maps_webservice/places.dart';
 import 'package:get/get.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -19,10 +22,10 @@ class CreateEventScreen extends StatelessWidget {
   final ImagePicker _imagePicker = ImagePicker();
   final ImageCropper _imageCropper = ImageCropper();
 
+  final EventController _controller = Get.put(EventController());
+
   @override
   Widget build(BuildContext context) {
-    EventController controller = Get.put(EventController());
-
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
       borderSide: const BorderSide(
@@ -42,16 +45,16 @@ class CreateEventScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Create Event'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Stack(
-          children: [
-            Form(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
               key: _formKey,
               child: Column(
                 children: [
                   AppTextField(
-                    controller: controller.nameController.value,
+                    controller: _controller.nameController.value,
                     hintText: 'Event Name',
                     validator: (value) {
                       if (value!.isEmpty) {
@@ -62,10 +65,11 @@ class CreateEventScreen extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 10),
-                  TextFormField(
-                    controller: controller.locationController.value,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
+                  PlacesAutocompleteField(
+                    apiKey: 'AIzaSyArgtGCvxqhaW-EdFHnSeI4vTANeGvRFTg',
+                    controller: _controller.locationController.value,
+                    hint: '',
+                    inputDecoration: InputDecoration(
                       hintText: 'Location',
                       hintStyle: const TextStyle(
                         color: Colors.grey,
@@ -77,14 +81,24 @@ class CreateEventScreen extends StatelessWidget {
                       errorBorder: errorBorder,
                       focusedErrorBorder: errorBorder,
                     ),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Required';
-                      }
+                    onSelected: (p) async {
+                      GoogleMapsPlaces _places = GoogleMapsPlaces(
+                        apiKey: 'AIzaSyArgtGCvxqhaW-EdFHnSeI4vTANeGvRFTg',
+                        apiHeaders: await const GoogleApiHeaders().getHeaders(),
+                      );
+                      PlacesDetailsResponse detail =
+                          await _places.getDetailsByPlaceId(p.placeId!);
+                      final lat = detail.result.geometry!.location.lat;
+                      final lng = detail.result.geometry!.location.lng;
+                      final postalCode = detail.result.addressComponents
+                          .firstWhere((element) =>
+                              element.types.contains('postal_code'))
+                          .longName;
 
-                      return null;
+                      _controller.lat = lat;
+                      _controller.lng = lng;
+                      _controller.zipCode = postalCode;
                     },
-                    onFieldSubmitted: controller.autoCompleteSearch,
                   ),
                   const SizedBox(height: 15),
                   Column(
@@ -114,18 +128,18 @@ class CreateEventScreen extends StatelessWidget {
                           () => DropdownButton<Category>(
                             isExpanded: true,
                             hint: const Text('Category'),
-                            value: controller.selectedCategory.value.id == null
+                            value: _controller.selectedCategory.value.id == null
                                 ? null
-                                : controller.selectedCategory.value,
-                            onChanged: controller.onCategoryChanged,
+                                : _controller.selectedCategory.value,
+                            onChanged: _controller.onCategoryChanged,
                             underline: const SizedBox(),
                             items: List.generate(
-                              controller.categories.length,
+                              _controller.categories.length,
                               (index) => DropdownMenuItem(
-                                child: Text(controller
+                                child: Text(_controller
                                         .categories[index].name?.capitalize ??
                                     ''),
-                                value: controller.categories[index],
+                                value: _controller.categories[index],
                               ),
                             ),
                           ),
@@ -161,9 +175,9 @@ class CreateEventScreen extends StatelessWidget {
                           () => DropdownButton<int>(
                             isExpanded: true,
                             hint: const Text('Category'),
-                            value: controller.selectedTime.value,
+                            value: _controller.selectedTime.value,
                             onChanged: (value) {
-                              controller.selectedTime.value = value!;
+                              _controller.selectedTime.value = value!;
                             },
                             underline: const SizedBox(),
                             items: List.generate(
@@ -179,7 +193,7 @@ class CreateEventScreen extends StatelessWidget {
                     ],
                   ),
                   Obx(
-                    () => controller.selectedTime.value == 2
+                    () => _controller.selectedTime.value == 2
                         ? InkWell(
                             onTap: () async {
                               DateTime? date = await showDatePicker(
@@ -193,7 +207,7 @@ class CreateEventScreen extends StatelessWidget {
                               );
 
                               if (date != null) {
-                                controller.eventDate.value = date;
+                                _controller.eventDate.value = date;
                               }
                             },
                             child: Container(
@@ -220,7 +234,7 @@ class CreateEventScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     DateFormat('dd MMM yyyy')
-                                        .format(controller.eventDate.value),
+                                        .format(_controller.eventDate.value),
                                     style: const TextStyle(
                                       fontSize: 16,
                                       color: AppColor.orange,
@@ -235,6 +249,7 @@ class CreateEventScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   InkWell(
                     onTap: () {
+                      FocusScope.of(context).unfocus();
                       _showImagePickerDialog();
                     },
                     child: Container(
@@ -252,13 +267,13 @@ class CreateEventScreen extends StatelessWidget {
                         ],
                       ),
                       child: Obx(
-                        () => controller.eventImage.value == null
+                        () => _controller.eventImage.value == null
                             ? const Icon(
                                 Icons.add_photo_alternate_outlined,
                                 size: 50,
                                 color: AppColor.orange,
                               )
-                            : Image.file(controller.eventImage.value!),
+                            : Image.file(_controller.eventImage.value!),
                       ),
                     ),
                   ),
@@ -268,13 +283,17 @@ class CreateEventScreen extends StatelessWidget {
                       if (_formKey.currentState!.validate()) {
                         FocusScope.of(context).unfocus();
 
-                        if (controller.selectedCategory.value.id == null) {
+                        if (_controller.locationController.value.text.isEmpty) {
+                          showErrorSnackBar(
+                              'Required', 'Please select address');
+                        } else if (_controller.selectedCategory.value.id ==
+                            null) {
                           showErrorSnackBar('Error', 'Please select category');
-                        } else if (controller.eventImage.value == null) {
+                        } else if (_controller.eventImage.value == null) {
                           showErrorSnackBar(
                               'Error', 'Please choose event image');
                         } else {
-                          controller.createCard();
+                          _controller.createCard();
                         }
                       }
                     },
@@ -284,69 +303,13 @@ class CreateEventScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Obx(
-              () => controller.predictions.isEmpty
-                  ? const SizedBox()
-                  : Container(
-                      padding: const EdgeInsets.all(16),
-                      margin:
-                          const EdgeInsets.only(top: 260, left: 16, right: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            offset: Offset(4, 4),
-                            blurRadius: 24,
-                          )
-                        ],
-                      ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemBuilder: (context, index) {
-                          return InkWell(
-                            onTap: () {
-                              controller.locationController.value.text =
-                                  controller.predictions[index].description ??
-                                      '';
-                              controller.selectedLocation =
-                                  controller.predictions[index];
-                              controller.predictions.clear();
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.orange,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xff6d8dad)
-                                        .withOpacity(0.25),
-                                    offset: const Offset(3, 3),
-                                    blurRadius: 10,
-                                  )
-                                ],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                  controller.predictions[index].description ??
-                                      ''),
-                            ),
-                          );
-                        },
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 10),
-                        itemCount: controller.predictions.length,
-                      ),
-                    ),
-            ),
-            Obx(
-              () => controller.loading.value
-                  ? const AppLoader()
-                  : const SizedBox(),
-            ),
-          ],
-        ),
+          ),
+          Obx(
+            () => _controller.loading.value
+                ? const AppLoader()
+                : const SizedBox(),
+          ),
+        ],
       ),
     );
   }
@@ -427,6 +390,6 @@ class CreateEventScreen extends StatelessWidget {
     );
 
     // Assign profile image to controller for updating widget
-    EventController.instance.eventImage.value = file;
+    _controller.eventImage.value = file;
   }
 }

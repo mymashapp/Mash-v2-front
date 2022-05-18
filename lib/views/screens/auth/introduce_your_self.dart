@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:get/get.dart';
@@ -239,7 +241,7 @@ class IntroduceYourSelf extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   _showPreferences(),
-                  const SizedBox(height: 20),
+                  /*const SizedBox(height: 20),
                   InkWell(
                     onTap: () {
                       FocusScope.of(context).unfocus();
@@ -262,9 +264,90 @@ class IntroduceYourSelf extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ),
+                  ),*/
                   const SizedBox(height: 20),
-                  InkWell(
+                  Container(
+                    height: 100.0,
+                    padding: const EdgeInsets.symmetric(vertical: 10.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        InkWell(
+                          onTap: () async {
+                            List<XFile>? files = await _imagePicker
+                                .pickMultiImage(imageQuality: 70);
+                            if (files != null) {
+                              _controller.mediaImages.addAll(
+                                  files.map((e) => File(e.path)).toList());
+                            }
+                          },
+                          child: Container(
+                            height: 80.0,
+                            width: 80.0,
+                            decoration: const BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(6.0)),
+                              color: AppColor.lightOrange,
+                            ),
+                            child: const Icon(
+                              Icons.add_photo_alternate_outlined,
+                              color: Colors.orange,
+                              size: 25,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 1.0),
+                        Expanded(
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(6.0)),
+                              color: AppColor.lightOrange,
+                            ),
+                            child: Obx(
+                              () => _controller.mediaImages.isEmpty
+                                  ? const Center(
+                                      child: Text(
+                                        'Please select minimum three media images',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      physics: const BouncingScrollPhysics(),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 5.0),
+                                      scrollDirection: Axis.horizontal,
+                                      shrinkWrap: true,
+                                      itemCount: _controller.mediaImages.length,
+                                      itemBuilder: (context, index) {
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 5.0, vertical: 5.0),
+                                          child: AspectRatio(
+                                            aspectRatio: 1,
+                                            child: RepaintBoundary(
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(8.0),
+                                                child: Image(
+                                                  image: FileImage(_controller
+                                                      .mediaImages[index]),
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  /*InkWell(
                     onTap: () {
                       FocusScope.of(context).unfocus();
                       _showImagePickerDialog(3);
@@ -286,7 +369,7 @@ class IntroduceYourSelf extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ),
+                  ),*/
                   const SizedBox(height: 32),
                   AppButton(
                     onPressed: () {
@@ -300,6 +383,12 @@ class IntroduceYourSelf extends StatelessWidget {
                           showErrorSnackBar(
                             'Minimum 3 interest is required',
                             'Please add at least 3 interest to your profile',
+                          );
+                          return;
+                        } else if (_controller.mediaImages.length < 3) {
+                          showErrorSnackBar(
+                            'Minimum 3 media images is required',
+                            'Please add at least 3 media images to your profile',
                           );
                           return;
                         }
@@ -394,21 +483,25 @@ class IntroduceYourSelf extends StatelessWidget {
                       color: AppColor.orange,
                     ),
                   ),
-                  child: Obx(() => DropdownButton<String>(
-                        value: _controller.genderPref.value.isEmpty
-                            ? null
-                            : _controller.genderPref.value,
-                        items: _genderList
-                            .map((e) => DropdownMenuItem(
-                                  child: Text(e),
-                                  value: e,
-                                ))
-                            .toList(),
-                        isExpanded: true,
-                        hint: const Text('Select Gender'),
-                        underline: const SizedBox(),
-                        onChanged: _controller.onPrefGenderChanged,
-                      )),
+                  child: Obx(
+                    () => DropdownButton<String>(
+                      value: _controller.genderPref.value.isEmpty
+                          ? null
+                          : _controller.genderPref.value,
+                      items: _genderList
+                          .map((e) => DropdownMenuItem(
+                                child: Text(e),
+                                value: e,
+                              ))
+                          .toList(),
+                      isExpanded: true,
+                      hint: const Text('Select Gender'),
+                      underline: const SizedBox(),
+                      onChanged: _controller.groupNoPref.value == 'Group of 3'
+                          ? null
+                          : _controller.onPrefGenderChanged,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 15),
                 Container(
@@ -422,21 +515,23 @@ class IntroduceYourSelf extends StatelessWidget {
                       color: AppColor.orange,
                     ),
                   ),
-                  child: Obx(() => DropdownButton<String>(
-                        value: _controller.groupNoPref.value.isEmpty
-                            ? null
-                            : _controller.groupNoPref.value,
-                        items: _groupList
-                            .map((e) => DropdownMenuItem(
-                                  child: Text(e),
-                                  value: e,
-                                ))
-                            .toList(),
-                        isExpanded: true,
-                        hint: const Text('Select Group'),
-                        underline: const SizedBox(),
-                        onChanged: _controller.onPrefGroupChanged,
-                      )),
+                  child: Obx(
+                    () => DropdownButton<String>(
+                      value: _controller.groupNoPref.value.isEmpty
+                          ? null
+                          : _controller.groupNoPref.value,
+                      items: _groupList
+                          .map((e) => DropdownMenuItem(
+                                child: Text(e),
+                                value: e,
+                              ))
+                          .toList(),
+                      isExpanded: true,
+                      hint: const Text('Select Group'),
+                      underline: const SizedBox(),
+                      onChanged: _controller.onPrefGroupChanged,
+                    ),
+                  ),
                 ),
               ],
             ),

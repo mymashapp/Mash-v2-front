@@ -38,7 +38,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>FacebookAppID</key>
 	<string>188411353246143</string>
 	<key>FacebookClientToken</key>
@@ -63,6 +63,8 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Mash app needs access to camera to take profile photo or upload photos in mash app.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Mash app needs access to location for fetching events around you.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Mash app needs access to gallery for take your profile photo or upload photos in mash app.</string>
 	<key>UIBackgroundModes</key>
