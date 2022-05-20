@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mash_flutter/controllers/auth_controller.dart';
 import 'package:mash_flutter/controllers/location_controller.dart';
 import 'package:mash_flutter/services/api_client.dart';
+import 'package:mash_flutter/views/screens/auth/introduce_your_self.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'constants/app_colors.dart';

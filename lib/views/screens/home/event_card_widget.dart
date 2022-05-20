@@ -43,7 +43,9 @@ class EventCardWidget extends StatelessWidget {
             child: CachedNetworkImage(
               width: Get.width,
               height: Get.height,
-              imageUrl: cardModel.pictureUrl ?? '',
+              imageUrl: cardModel.cardType == CardType.own
+                  ? 'https://backend.mymashapp.com/${cardModel.pictureUrl ?? ''}'
+                  : cardModel.pictureUrl ?? '',
               fit: BoxFit.cover,
               progressIndicatorBuilder: (context, url, downloadProgress) =>
                   const Center(
@@ -127,55 +129,56 @@ class EventCardWidget extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      cardModel.cardType == CardType.yelp ||
-                              cardModel.cardType == CardType.own
-                          ? _buildYelpStarRatting()
-                          : RatingBar.builder(
-                              initialRating: cardModel.rating!,
-                              minRating: 1,
-                              direction: Axis.horizontal,
-                              allowHalfRating: true,
-                              itemCount: 5,
-                              ignoreGestures: true,
-                              itemSize: 25,
-                              unratedColor: AppColor.lightOrange,
-                              itemPadding: EdgeInsets.zero,
-                              itemBuilder: (context, _) => const Icon(
-                                Icons.star,
-                                color: AppColor.orange,
-                              ),
-                              onRatingUpdate: (rating) {},
-                            ),
-                      const Spacer(),
-                      cardModel.cardType == CardType.yelp
-                          ? SizedBox(
-                              width: 100,
-                              child: Image.asset(
-                                "assets/images/yelp_logo.png",
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : cardModel.cardType == CardType.airbnb
-                              ? CachedNetworkImage(
-                                  imageUrl:
-                                      'https://cdn.freebiesupply.com/logos/large/2x/airbnb-2-logo-png-transparent.png',
-                                  fit: BoxFit.cover,
-                                  height: 60,
-                                  width: 60,
-                                  progressIndicatorBuilder:
-                                      (context, url, downloadProgress) =>
-                                          const Center(
-                                    child: CircularProgressIndicator(
-                                      color: AppColor.orange,
-                                    ),
-                                  ),
-                                )
-                              : Image.asset(
-                                  "assets/images/groupon_logo.png",
-                                  height: 60,
-                                  width: 100,
-                                  fit: BoxFit.contain,
+                      if (cardModel.rating != 0)
+                        cardModel.cardType == CardType.yelp ||
+                                cardModel.cardType == CardType.own
+                            ? _buildYelpStarRatting()
+                            : RatingBar.builder(
+                                initialRating: cardModel.rating!,
+                                minRating: 1,
+                                direction: Axis.horizontal,
+                                allowHalfRating: true,
+                                itemCount: 5,
+                                ignoreGestures: true,
+                                itemSize: 25,
+                                unratedColor: AppColor.lightOrange,
+                                itemPadding: EdgeInsets.zero,
+                                itemBuilder: (context, _) => const Icon(
+                                  Icons.star,
+                                  color: AppColor.orange,
                                 ),
+                                onRatingUpdate: (rating) {},
+                              ),
+                      const Spacer(),
+                      if (cardModel.cardType == CardType.yelp)
+                        SizedBox(
+                          width: 100,
+                          child: Image.asset(
+                            "assets/images/yelp_logo.png",
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      if (cardModel.cardType == CardType.airbnb)
+                        CachedNetworkImage(
+                          imageUrl:
+                              'https://cdn.freebiesupply.com/logos/large/2x/airbnb-2-logo-png-transparent.png',
+                          fit: BoxFit.cover,
+                          height: 60,
+                          width: 60,
+                          progressIndicatorBuilder:
+                              (context, url, downloadProgress) => const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColor.orange,
+                            ),
+                          ),
+                        ),
+                      if (cardModel.cardType == CardType.groupon)
+                        Image.asset(
+                          "assets/images/groupon_logo.png",
+                          height: 60,
+                          width: 100,
+                          fit: BoxFit.contain,
+                        ),
                       InkWell(
                         onTap: () {
                           final position =
@@ -200,7 +203,7 @@ class EventCardWidget extends StatelessWidget {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            cardModel.address ?? '',
+                                            cardModel.name ?? '',
                                             maxLines: 2,
                                             style: const TextStyle(
                                               fontSize: 18,
@@ -219,13 +222,15 @@ class EventCardWidget extends StatelessWidget {
                                             icon: const Icon(Icons.call),
                                             color: AppColor.orange,
                                           ),
-                                        IconButton(
-                                          onPressed: () {
-                                            launch(cardModel.url ?? '');
-                                          },
-                                          icon: const Icon(Icons.link),
-                                          color: AppColor.orange,
-                                        )
+                                        if (cardModel.url != null &&
+                                            cardModel.url!.isNotEmpty)
+                                          IconButton(
+                                            onPressed: () {
+                                              launch(cardModel.url ?? '');
+                                            },
+                                            icon: const Icon(Icons.link),
+                                            color: AppColor.orange,
+                                          )
                                       ],
                                     ),
                                   ),

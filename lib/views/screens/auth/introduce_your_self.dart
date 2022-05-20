@@ -379,10 +379,10 @@ class IntroduceYourSelf extends StatelessWidget {
                         final interests = _controller.interests
                             .where((e) => e.isSelected)
                             .toList();
-                        if (interests.length < 3) {
+                        if (interests.length > 3) {
                           showErrorSnackBar(
-                            'Minimum 3 interest is required',
-                            'Please add at least 3 interest to your profile',
+                            'Maximum 3 interest is required',
+                            'Please add maximum 3 interest to your profile',
                           );
                           return;
                         } else if (_controller.mediaImages.length < 3) {

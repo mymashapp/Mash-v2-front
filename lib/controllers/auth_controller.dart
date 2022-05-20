@@ -366,13 +366,13 @@ class AuthController extends GetxController {
               _user.pictures![coverIndex].pictureUrl!;
         }
 
-        final mediaImages = _user.pictures!
+        final _mediaImages = _user.pictures!
             .where((element) => element.pictureType == 3)
             .toList();
 
-        debugPrint('Media Images Lenght ==> ${mediaImages.length}');
+        debugPrint('Media Images Lenght ==> ${_mediaImages.length}');
 
-        mediaImageUrls.value = mediaImages;
+        mediaImageUrls.value = _mediaImages;
       }
 
       userName.value = user!.name!;
@@ -382,6 +382,8 @@ class AuthController extends GetxController {
           : user!.preferenceGender == 2
               ? 'Woman'
               : 'Both';
+      groupNoPref.value =
+          user!.preferenceGroupOf == 2 ? 'Group of 2' : 'Group of 3';
 
       if (user!.preferenceAgeFrom == 0) {
         minAge.value = 18.0;
@@ -512,6 +514,9 @@ class AuthController extends GetxController {
     _userInput.pictures = [];
 
     await _client.putData(Api.USER_UPDATE, _userInput.toJson());
+    // remove old data from media images
+    mediaImages.clear();
+
     fetchUserDetails(user!.uid!);
 
     loading.value = false;
@@ -556,7 +561,21 @@ class AuthController extends GetxController {
   void selectInterest(int index) {
     debugPrint('$index');
 
-    interests[index].isSelected = !interests[index].isSelected;
+    if (interests[index].isSelected) {
+      interests[index].isSelected = false;
+    } else {
+      final length = interests.where((e) => e.isSelected).toList().length;
+      if (length >= 3) {
+        showErrorSnackBar(
+          'Error',
+          'Choose maximum 3 interest to your profile',
+        );
+        return;
+      }
+      interests[index].isSelected = true;
+    }
+
+    // interests[index].isSelected = !interests[index].isSelected;
     interests.refresh();
   }
 
